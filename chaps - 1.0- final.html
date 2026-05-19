@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAPS Payment System — Level 1: Fundamentals</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e6f0;min-height:100vh;overflow-x:hidden}
+.ov{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(5,8,20,.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s;cursor:pointer}
+.ov.hide{opacity:0;pointer-events:none}
+.ov-t{font-size:24px;color:#e0e6f0;margin-bottom:20px;text-align:center;line-height:1.4}
+.ov-n{font-size:110px;font-weight:800;background:linear-gradient(135deg,#00c8ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ov-s{font-size:14px;color:#7a8aaa;margin-top:10px}
+.ov-hint{font-size:12px;color:#ffd700;margin-top:25px;animation:pulse2 1.5s infinite}
+@keyframes pulse2{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes tkScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker{position:fixed;top:0;left:0;right:0;height:28px;background:#0d1525;border-bottom:1px solid rgba(0,200,255,.1);z-index:200;overflow:hidden;display:flex;align-items:center}
+.tk-track{display:flex;white-space:nowrap;animation:tkScroll 45s linear infinite}
+.tk-i{padding:0 28px;font-size:10px;color:#5bc0de;letter-spacing:.7px;text-transform:uppercase}
+.tk-i span{color:#ffd700;margin-right:4px}
+.tabs{display:flex;gap:0;max-width:1400px;margin:32px auto 0;padding:0 12px}
+.tab{padding:9px 22px;font-size:12px;font-weight:600;border:1px solid rgba(100,120,180,.15);border-bottom:none;border-radius:8px 8px 0 0;cursor:default;color:#4a5a7a;background:rgba(10,14,26,.6);transition:all .3s}
+.tab.on{color:#00c8ff;background:rgba(0,200,255,.06);border-color:rgba(0,200,255,.25)}
+.tab.dis{opacity:.3}
+.main{max-width:1400px;margin:0 auto;padding:8px 12px 12px;border:1px solid rgba(0,200,255,.06);border-top:none;border-radius:0 0 10px 10px;background:rgba(10,14,26,.4)}
+h1{text-align:center;font-size:1.5em;margin:6px 0 2px;background:linear-gradient(135deg,#00c8ff,#6078ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#6a7a9a;font-size:.75em;margin-bottom:6px}
+.ban{padding:6px 12px;border-radius:8px;background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.12);display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:6px}
+.ban i{font-size:10px;color:#c4b5fd;font-style:normal}.ban i b{color:#e0d4ff}
+.grid{display:grid;grid-template-columns:195px 1fr 270px;gap:10px;margin-bottom:10px}
+.lpan{background:rgba(12,18,35,.6);border:1px solid rgba(100,120,180,.1);border-radius:10px;padding:8px;max-height:480px;display:flex;flex-direction:column}
+.lpan-t{font-size:11px;font-weight:700;color:#a855f7;margin-bottom:6px;text-align:center;letter-spacing:.5px}
+.tlist{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.25) transparent}
+.tlist::-webkit-scrollbar{width:3px}.tlist::-webkit-scrollbar-thumb{background:rgba(168,85,247,.25);border-radius:2px}
+@keyframes slideL{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.titem{display:flex;gap:6px;padding:5px 3px;border-bottom:1px solid rgba(100,120,180,.06);animation:slideL .3s ease;align-items:flex-start}
+.tnum{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#6078ff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0;margin-top:1px}
+.ttxt{font-size:9px;color:#8a9aba;line-height:1.3}
+.cpan{position:relative}
+.prog{height:3px;background:rgba(255,255,255,.03);border-radius:3px;margin-bottom:5px;overflow:hidden}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,#00c8ff,#a855f7);transition:width .5s}
+.sdots{display:flex;justify-content:center;gap:4px;margin-bottom:5px}
+.sd{width:6px;height:6px;border-radius:50%;background:rgba(100,120,180,.15);transition:all .3s}
+.sd.on{background:#00c8ff;box-shadow:0 0 5px rgba(0,200,255,.5)}.sd.dn{background:#a855f7}
+.map{position:relative;width:100%;height:420px}
+@keyframes hFlash{0%{box-shadow:0 0 8px rgba(255,215,0,.2)}50%{box-shadow:0 0 45px rgba(255,215,0,1)}100%{box-shadow:0 0 8px rgba(255,215,0,.2)}}
+@keyframes nGlow{0%,100%{box-shadow:0 0 5px rgba(0,200,255,.25)}50%{box-shadow:0 0 16px rgba(0,200,255,.7)}}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:95px;height:95px;border-radius:50%;border:2px solid rgba(255,215,0,.45);background:radial-gradient(circle,rgba(40,35,20,.85),rgba(20,15,10,.95));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+.hub.fl{animation:hFlash .7s ease}
+.hub-i{font-size:22px}.hub-l{font-size:8px;color:#ffd700;font-weight:700;text-align:center}.hub-s{font-size:7px;color:#bfa64a}
+.bk{position:absolute;width:74px;height:74px;border-radius:50%;border:2px solid rgba(0,200,255,.2);background:radial-gradient(circle,rgba(15,25,50,.95),rgba(10,15,35,.98));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;transition:all .3s}
+.bk.sn{border-color:#00ff88;box-shadow:0 0 14px rgba(0,255,136,.25)}
+.bk.rv{border-color:#ff6b9d;box-shadow:0 0 14px rgba(255,107,157,.25)}
+.bk-i{font-size:18px;margin-bottom:1px}.bk-n{font-size:7.5px;color:#b0c4de;font-weight:600;text-align:center;line-height:1.1}
+.svg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5}
+.sp{stroke:rgba(60,80,120,.18);stroke-width:1.5;fill:none;transition:all .3s}
+.sp.sn{stroke:rgba(0,255,136,.35);stroke-width:2.5}.sp.rv{stroke:rgba(255,107,157,.35);stroke-width:2.5}
+@keyframes fUp{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-35px)}}
+.fd{position:absolute;z-index:15;pointer-events:none;font-size:26px;filter:drop-shadow(0 0 5px rgba(255,215,0,.5))}
+.tr{position:absolute;width:4px;height:4px;border-radius:50%;z-index:12;pointer-events:none;opacity:.65;transition:opacity .35s}
+.ft{position:absolute;z-index:20;pointer-events:none;font-size:10px;font-weight:700;animation:fUp 1.4s ease forwards;white-space:nowrap}
+.bu{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:0;height:0;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.45),transparent);z-index:8;pointer-events:none;opacity:0;transition:all .6s}
+.bu.on{width:150px;height:150px;opacity:1}
+.rpan{background:rgba(12,18,35,.6);border:1px solid rgba(100,120,180,.1);border-radius:10px;padding:8px;max-height:480px;display:flex;flex-direction:column}
+.rpan-t{font-size:11px;font-weight:700;color:#00c8ff;margin-bottom:6px;text-align:center;letter-spacing:.5px}
+.clog{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,200,255,.25) transparent;padding-right:3px}
+.clog::-webkit-scrollbar{width:3px}.clog::-webkit-scrollbar-thumb{background:rgba(0,200,255,.25);border-radius:2px}
+.cmsg{margin-bottom:8px;animation:slideL .3s ease}
+.cq{background:rgba(255,107,157,.05);border:1px solid rgba(255,107,157,.1);border-radius:8px;padding:7px 9px}
+.ca{background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.1);border-radius:8px;padding:7px 9px}
+.ch{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.cav{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.cav.f{background:rgba(255,107,157,.12);border:1px solid rgba(255,107,157,.18)}
+.cav.m{background:rgba(0,200,255,.12);border:1px solid rgba(0,200,255,.18)}
+.cn{font-size:8px;font-weight:700}.cn.f{color:#ff6b9d}.cn.m{color:#00c8ff}
+.ct{font-size:9.5px;color:#8a9aba;line-height:1.4}.ct.qi{color:#dbb8f0;font-style:italic}
+.cdet{font-size:8px;color:#5a6a8a;margin-top:3px;padding-top:3px;border-top:1px solid rgba(100,120,180,.08)}
+.cur{display:inline-block;width:2px;height:10px;background:#00c8ff;margin-left:1px;animation:bl .5s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.ctxh{text-align:center;font-size:9px;color:#ffd700;padding:5px;margin:6px 0;border:1px dashed rgba(255,215,0,.12);border-radius:6px;background:rgba(255,215,0,.02)}
+.fut{margin:10px 0;padding:12px 16px;border-radius:10px;border:1px solid rgba(168,85,247,.12);background:rgba(168,85,247,.03)}
+.fut-t{font-size:12px;font-weight:700;color:#a855f7;margin-bottom:5px}
+.fut ul{font-size:10px;color:#6a7a9a;line-height:1.8;margin-left:16px}
+.fut li::marker{color:#a855f7}
+.crbtn{position:fixed;bottom:12px;right:12px;z-index:300;padding:7px 14px;border-radius:18px;border:1px solid rgba(100,120,180,.2);background:rgba(12,18,35,.9);color:#7a8aaa;font-size:11px;cursor:pointer;transition:all .3s}
+.crbtn:hover{border-color:#a855f7;color:#c4b5fd}
+.crmod{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:400;align-items:center;justify-content:center}
+.crbox{background:#0f1628;border:1px solid rgba(168,85,247,.25);border-radius:16px;padding:28px;max-width:420px;width:90%;position:relative;margin:auto;margin-top:15vh}
+.crclose{position:absolute;top:10px;right:14px;font-size:22px;color:#6a7a9a;cursor:pointer}
+.crclose:hover{color:#ff6b6b}
+.crname{font-size:20px;font-weight:700;color:#e0e6f0;text-align:center;text-decoration:underline}
+.crrole{font-size:12px;color:#8a9aba;text-align:center;margin-top:4px}
+.crorg{font-size:14px;color:#ffd700;text-align:center;font-weight:600;margin-top:4px}
+.cremail{text-align:center;margin-top:10px;font-size:11px}
+.cremail a{color:#00c8ff;text-decoration:none}.cremail a:hover{text-decoration:underline}
+.crdisc{font-size:10px;color:#5a6a8a;margin-top:14px;padding-top:10px;border-top:1px solid rgba(100,120,180,.12);line-height:1.5;text-align:center}
+@media(max-width:900px){.grid{grid-template-columns:1fr;}.lpan,.rpan{max-height:200px}}
+</style>
+</head>
+<body>
+
+<div class="ov" id="ov" onclick="userClicked=true">
+  <div class="ov-t">🏦 CHAPS Payment System<br>Interactive Q&A Learning Experience</div>
+  <div class="ov-n" id="cdn">5</div>
+  <div class="ov-s">Starting in <span id="cdw">five</span> seconds...</div>
+  <div class="ov-hint">👆 Click anywhere to enable audio commentary</div>
+</div>
+
+<div class="ticker"><div class="tk-track">
+  <div class="tk-i"><span>▸</span> CHAPS DAILY VOLUME: £300 BILLION+</div>
+  <div class="tk-i"><span>▸</span> ~40,000 PAYMENTS PROCESSED DAILY</div>
+  <div class="tk-i"><span>▸</span> REAL-TIME GROSS SETTLEMENT (RTGS)</div>
+  <div class="tk-i"><span>▸</span> OPERATED BY BANK OF ENGLAND SINCE 2017</div>
+  <div class="tk-i"><span>▸</span> SETTLEMENT FINALITY: IRREVOCABLE ONCE COMPLETED</div>
+  <div class="tk-i"><span>▸</span> SWIFT MESSAGING (ISO 20022)</div>
+  <div class="tk-i"><span>▸</span> CHAPS DAILY VOLUME: £300 BILLION+</div>
+  <div class="tk-i"><span>▸</span> ~40,000 PAYMENTS PROCESSED DAILY</div>
+  <div class="tk-i"><span>▸</span> REAL-TIME GROSS SETTLEMENT (RTGS)</div>
+  <div class="tk-i"><span>▸</span> OPERATED BY BANK OF ENGLAND SINCE 2017</div>
+  <div class="tk-i"><span>▸</span> SETTLEMENT FINALITY: IRREVOCABLE ONCE COMPLETED</div>
+  <div class="tk-i"><span>▸</span> SWIFT MESSAGING (ISO 20022)</div>
+</div></div>
+
+<div class="tabs">
+  <div class="tab on">Level 1 — Fundamentals</div>
+  <div class="tab dis">Level 2 — Advanced Flows 🔒</div>
+  <div class="tab dis">Level 3 — Sample Solutions 🔒</div>
+</div>
+
+<div class="main">
+  <h1>🏦 CHAPS Payment System</h1>
+  <p class="sub">Level 1 — Interactive Q&A Learning Experience</p>
+  <div class="ban" id="ban"></div>
+  <div class="sdots" id="sdots"></div>
+  <div class="prog"><div class="pfill" id="pfill"></div></div>
+
+  <div class="grid">
+    <div class="lpan">
+      <div class="lpan-t">📘 Topics Covered</div>
+      <div class="tlist" id="tlist"></div>
+    </div>
+    <div class="cpan">
+      <div class="map" id="map">
+        <svg class="svg" id="svg"></svg>
+        <div class="hub" id="hub"><div class="hub-i">🏛️</div><div class="hub-l">Bank of England</div><div class="hub-s">RTGS Hub</div></div>
+        <div class="bu" id="burst"></div>
+      </div>
+    </div>
+    <div class="rpan">
+      <div class="rpan-t">💬 Q&A Transcript</div>
+      <div class="clog" id="clog"></div>
+    </div>
+  </div>
+
+  <div class="fut">
+    <div class="fut-t">🚀 Future Enhancements (Planned)</div>
+    <ul>
+      <li><strong>Level 2 — Advanced Flows:</strong> Cross-border CHAPS, multi-currency settlement, RTGS renewal programme, ISO 20022 migration deep-dive</li>
+      <li><strong>Level 3 — Sample Solutions:</strong> Interactive assessment mode with scenario-based questions, drag-and-drop settlement flow builder</li>
+      <li><strong>Additional Tabs:</strong> Comparison with Faster Payments, BACS, and TARGET2; glossary of payment terms; regulatory framework overview</li>
+      <li><strong>Enhanced Visuals:</strong> 3D settlement flow, real-time simulated liquidity dashboard, interactive SWIFT message inspector</li>
+    </ul>
+  </div>
+</div>
+
+<button class="crbtn" onclick="document.getElementById('crmod').style.display='block'">ℹ️ Credits & Disclaimer</button>
+
+<div class="crmod" id="crmod">
+  <div class="crbox">
+    <div class="crclose" onclick="document.getElementById('crmod').style.display='none'">&times;</div>
+    <div style="text-align:center;margin-bottom:12px;font-size:28px">🏦</div>
+    <div class="crname">Ilyas Kadri</div>
+    <div class="crrole">QA Lead, Payments | Life long student</div>
+    <div class="crorg">Santander UK</div>
+    <div class="cremail">
+      <a href="mailto:Mohmediliyas.Kadari@santander.co.uk">Mohmediliyas.Kadari@santander.co.uk</a><br>
+      <a href="mailto:ilyas.kadri@gmail.com">ilyas.kadri@gmail.com</a>
+    </div>
+    <div class="crdisc"><strong>Disclaimer:</strong> This material is prepared for knowledge sharing purposes only. This is the creator's own version and interpretation of the CHAPS payment system for educational use. It does not represent the official views of any organisation mentioned.</div>
+  </div>
+</div>
+
+<script>
+var userClicked=false;
+var BANKS=[
+  {id:'barclays',name:"Barcley's",icon:'🔵',angle:0},
+  {id:'hsbc',name:'HBSC',icon:'🔴',angle:60},
+  {id:'lloyds',name:'Tooyed',icon:'🟢',angle:120},
+  {id:'natwest',name:'NotWest',icon:'🟣',angle:180},
+  {id:'stanchart',name:'StdChartd',icon:'🟡',angle:240},
+  {id:'santander',name:'Santander UK',icon:'🟠',angle:300}
+];
+var TXN=[
+  {id:'prop',label:'🏠 Property Purchase',amt:'£2,500,000',sender:'santander',receiver:'hsbc',
+   from:'Mr & Mrs Patel',to:'Henderson Solicitors (HBSC)',purpose:'Residential property completion',
+   steps:[
+     {q:"So, what happens when someone wants to buy a house worth two and a half million pounds using CHAPS?",
+      a:"Great question. The buyer, Mr and Mrs Patel, instruct their bank, Santander UK, to transfer two point five million pounds to the seller's solicitor at HBSC. This is a same-day, irrevocable payment, perfect for property completions where timing is critical.",
+      detail:"Payment channel: Corporate Online Banking | Completion deadline: 14:00 BST",anim:'hl-s',topic:'CHAPS Property Payment Initiation'},
+     {q:"Before the money moves, doesn't the bank need to check everything is legitimate?",
+      a:"Absolutely. Santander runs the payment through Anti-Money Laundering checks, Know Your Customer verification, and sanctions screening against the HMT and OFSI lists. They also verify the source of funds against the mortgage offer. Only then do they prepare a SWIFT MT103 message.",
+      detail:"SWIFT MT103 prepared | Screening: ~45 seconds",anim:'s-proc',topic:'AML/KYC Screening & MT103'},
+     {q:"How does the payment actually get from Santander to HBSC? Is it sent directly?",
+      a:"No, and this is a key point. There is no direct bank-to-bank channel. Every CHAPS payment flows through the Bank of England's RTGS hub. Santander transmits the MT103 message via the SWIFT network to the Bank of England, which acts as the central clearing point.",
+      detail:"Network: SWIFT FIN (Y-copy) | Priority: Urgent",anim:'s-hub',topic:'SWIFT Routing to BoE RTGS Hub'},
+     {q:"What does the Bank of England actually do when it receives this payment instruction?",
+      a:"The Bank of England validates the message format, then checks whether Santander's reserve account has sufficient liquidity. It also applies the Liquidity Saving Mechanism, or LSM, which looks for opportunities to offset payments against other flows.",
+      detail:"Reserve balance: Sufficient | LSM offsetting checked",anim:'hub-proc',topic:'Liquidity Check & LSM Mechanism'},
+     {q:"Can you explain what real-time gross settlement really means?",
+      a:"This is the heart of CHAPS. The RTGS system simultaneously debits two point five million from Santander's reserve account and credits the same amount to HBSC's reserve account. It happens in real time, not batched, not netted. Each payment settles individually, and once done, it is final and irrevocable.",
+      detail:"Debit: Santander -£2,500,000 | Credit: HBSC +£2,500,000 | IRREVOCABLE",anim:'settle',topic:'Real-Time Gross Settlement (RTGS)'},
+     {q:"How does HBSC know the money has arrived?",
+      a:"The Bank of England sends HBSC a SWIFT MT910 message, a Confirmation of Credit. HBSC's systems automatically match this against the incoming MT103, so they know exactly which payment has settled.",
+      detail:"MT910 dispatched | Auto-reconciliation enabled",anim:'hub-r',topic:'MT910 Credit Confirmation'},
+     {q:"When does the solicitor actually see the money?",
+      a:"Almost immediately. HBSC credits the two point five million to Henderson Solicitors' client account. The solicitor is notified and can release the keys to the Patels. The whole process typically takes about three minutes.",
+      detail:"Same-day value | ~3 minutes end-to-end",anim:'r-proc',topic:'Beneficiary Account Credit'},
+     {q:"Is that the end, or is there more behind the scenes?",
+      a:"There is always reconciliation. Both banks perform end-of-day nostro and vostro account reconciliation. The Bank of England updates its daily RTGS settlement report. The solicitors notify the Land Registry, and Stamp Duty is flagged with HMRC.",
+      detail:"Nostro/vostro reconciliation | BoE stats | Land Registry notified",anim:'recon',topic:'End-of-Day Reconciliation'}
+   ]},
+  {id:'corp',label:'🏢 Corporate Trade',amt:'£18,750,000',sender:'barclays',receiver:'natwest',
+   from:"BAE Systems (Barcley's)",to:'Rolls-Royce (NotWest)',purpose:'Trent XWB jet engine quarterly milestone',
+   steps:[
+     {q:"What happens with an eighteen million pound corporate transaction?",
+      a:"This is a quarterly milestone payment from BAE Systems to Rolls-Royce for the Trent XWB engine programme. BAE's corporate treasury instructs Barcley's to release eighteen point seven five million pounds. At this level, dual signatory authorisation is required.",
+      detail:"ERP: SAP S/4HANA | Dual signatory required",anim:'hl-s',topic:'Corporate Treasury Payment Initiation'},
+     {q:"Are the compliance checks more rigorous for defence sector payments?",
+      a:"Significantly. Barcley's applies Enhanced Due Diligence. They run export control checks, dual-use goods verification, and screen against seven different sanctions lists. This takes about two minutes rather than the usual forty-five seconds.",
+      detail:"EDD tier: High-value corporate | 7 sanctions lists",anim:'s-proc',topic:'Enhanced Due Diligence (EDD)'},
+     {q:"Does the SWIFT message carry additional information?",
+      a:"Yes. The MT103 includes structured remittance data that links directly to the purchase order. This enables straight-through processing. NotWest and Rolls-Royce's systems can automatically match the payment to the correct invoice.",
+      detail:"MT103 + structured remittance | STP enabled",anim:'s-hub',topic:'Structured Remittance & STP'},
+     {q:"At eighteen million, does the Bank of England handle this differently?",
+      a:"The LSM becomes more interesting at this scale. The algorithm finds that NotWest has a three point two million pound payment queued to Barcley's, so it offsets that, reducing the net liquidity needed to fifteen point five five million.",
+      detail:"Gross: £18.75M | LSM offset: £3.2M | Net: £15.55M",anim:'hub-proc',topic:'LSM Offsetting at Scale'},
+     {q:"Settlement happens simultaneously and irrevocably?",
+      a:"Exactly. The RTGS system atomically debits Barcley's reserve and credits NotWest's reserve with the full eighteen point seven five million. Irrevocable settlement finality is achieved down to the millisecond.",
+      detail:"Debit: Barcley's -£18.75M | Credit: NotWest +£18.75M",anim:'settle',topic:'Atomic Settlement Finality'},
+     {q:"How does Rolls-Royce's payment get matched?",
+      a:"NotWest receives the MT910 and their automated systems match it to Rolls-Royce's accounts receivable ledger using the structured remittance data. No human touches the payment.",
+      detail:"Auto-match: successful | STP: enabled",anim:'hub-r',topic:'Automated Receivables Matching'},
+     {q:"What happens inside Rolls-Royce's treasury?",
+      a:"NotWest credits the eighteen point seven five million to Rolls-Royce's operating account. Their treasury management system automatically updates the cash position and marks the milestone as received.",
+      detail:"TMS: auto-updated | PO: marked PAID",anim:'r-proc',topic:'Treasury Management System Update'},
+     {q:"Is corporate reconciliation more complex?",
+      a:"Much more. BAE updates accounts payable and schedules VAT reclaim. Rolls-Royce issues a receipt and recognises revenue. Both banks file Currency Transaction Reports. Every link has its own audit trail.",
+      detail:"AP updated | VAT scheduled | CTR filed",anim:'recon',topic:'Corporate Multi-Party Reconciliation'}
+   ]},
+  {id:'gilt',label:'📊 UK Gilt Settlement',amt:'£125,000,000',sender:'lloyds',receiver:'stanchart',
+   from:'L&G Inv Mgmt (Tooyed)',to:'Aberdeen Inv (StdChartd)',purpose:'1.5% Treasury Gilt 2035, 125M nominal',
+   steps:[
+     {q:"How does CHAPS handle a hundred and twenty-five million pound gilt trade?",
+      a:"This is where CHAPS intersects with securities settlement. Legal and General is buying gilts from Aberdeen Investments. The cash leg settles through CHAPS, while the securities leg settles simultaneously through CREST, Euroclear UK's settlement system.",
+      detail:"T+1 settlement | ISIN: GB00BMBL1F74",anim:'hl-s',topic:'DvP: Delivery versus Payment Concept'},
+     {q:"What pre-settlement checks are needed?",
+      a:"Tooyed confirms trade details against the CREST matching system. Both sides must agree on exact terms. They verify the custody account, check for settlement fails, and queue the payment for the morning gilts cycle.",
+      detail:"CREST match: MATCHED | Morning gilts cycle",anim:'s-proc',topic:'CREST Trade Matching'},
+     {q:"How do cash and securities settle simultaneously?",
+      a:"This is Delivery versus Payment, or DvP. Tooyed sends the cash instruction to RTGS, and simultaneously CREST queues the gilt delivery. Neither leg can settle without the other. This eliminates settlement risk entirely.",
+      detail:"DvP Model 1: gross, real-time | Atomic",anim:'s-hub',topic:'Atomic DvP Settlement Mechanics'},
+     {q:"The Bank of England coordinates with CREST?",
+      a:"Precisely. The Bank of England holds the hundred and twenty-five million in escrow until CREST confirms the gilt securities are ready. Both systems signal readiness, then atomic settlement executes.",
+      detail:"BoE RTGS and Euroclear UK CREST coordinated",anim:'hub-proc',topic:'RTGS-CREST Coordination'},
+     {q:"What does the moment of DvP settlement look like?",
+      a:"In the same instant, RTGS moves the cash and CREST transfers the gilt holding. Both legs are final and irrevocable. It is a beautifully engineered piece of financial plumbing.",
+      detail:"Cash: Tooyed -£125M to StdChartd +£125M | Securities transferred",anim:'settle',topic:'Simultaneous Cash & Securities Settlement'},
+     {q:"Who gets notified after gilt settlement?",
+      a:"Everyone. MT910 confirmations to both banks. CREST confirmations to both custodians. The Debt Management Office updates the gilt register. The trade is reported to the repository.",
+      detail:"MT910: both banks | DMO register updated",anim:'hub-r',topic:'Multi-Party Confirmation Cascade'},
+     {q:"How do fund managers update their books?",
+      a:"StdChartd credits Aberdeen's custody account, gilts have left. Tooyed credits L&G's custody account, gilts arrived. Both recalculate Net Asset Values and update coupon schedules.",
+      detail:"NAV recalculated | Coupon schedule updated",anim:'r-proc',topic:'Custody Account & NAV Updates'},
+     {q:"The regulatory reporting must be extensive?",
+      a:"Very much so. MiFID II transaction reports to the FCA. Bank of England updates gilt statistics. Both custodians perform end-of-day CREST reconciliation.",
+      detail:"MiFID II filed | CREST reconciliation complete",anim:'recon',topic:'MiFID II Post-Trade Reporting'}
+   ]},
+  {id:'nhs',label:'🏥 NHS Emergency',amt:'£8,200,000',sender:'hsbc',receiver:'barclays',
+   from:'NHS England (HBSC)',to:"GSK (Barcley's)",purpose:'Emergency vaccine procurement, winter preparedness',
+   steps:[
+     {q:"How does CHAPS handle an urgent NHS procurement?",
+      a:"NHS England needs to make an emergency payment of eight point two million pounds to GlaxoSmithKline for five hundred thousand vaccine doses. The payment is flagged as urgent public sector, triggering priority processing throughout the chain.",
+      detail:"500,000 doses within 72 hours | Cabinet Office approved",anim:'hl-s',topic:'Emergency Public Sector Priority'},
+     {q:"Are compliance checks different for government payments?",
+      a:"HBSC applies public sector protocols. Government Banking Service verification, Crown Commercial Service contract checks, and standard sanctions screening. The emergency flag means front-of-queue processing.",
+      detail:"GBS verified | CCS framework: RM6296 | URGENT",anim:'s-proc',topic:'Government Banking Service Protocols'},
+     {q:"Does the emergency flag make it faster?",
+      a:"It does. HBSC transmits with urgent priority and the public sector emergency flag. At the Bank of England, it goes to the front of any queue and fast-tracks the liquidity check.",
+      detail:"MT103 priority: URGENT | Queue bypass authorised",anim:'s-hub',topic:'RTGS Priority Queue Processing'},
+     {q:"The Bank of England gives genuine priority?",
+      a:"Absolutely. Reserve check is immediate. The payment bypasses throughput monitoring queues. Settlement target for emergency payments is under thirty seconds.",
+      detail:"Priority processing ENABLED | Target: under 30 seconds",anim:'hub-proc',topic:'Throughput Monitoring Bypass'},
+     {q:"How quickly does emergency settlement happen?",
+      a:"Twelve seconds. HBSC's reserve is debited and Barcley's reserve is credited. Settlement finality achieved. The vaccine supply chain is now unlocked.",
+      detail:"Time: 12 seconds | IRREVOCABLE | Supply chain UNLOCKED",anim:'settle',topic:'Sub-30-Second Emergency Settlement'},
+     {q:"The confirmation chain is equally fast?",
+      a:"Three seconds for the MT910 to reach Barcley's. GSK's treasury is notified immediately. NHS England gets debit confirmation. Total time from payment to supply chain unlock: under twenty seconds.",
+      detail:"MT910: 3 seconds | Supply chain UNLOCKED",anim:'hub-r',topic:'Rapid Confirmation Chain'},
+     {q:"What happens at GSK once payment is confirmed?",
+      a:"Barcley's credits eight point two million as immediate cleared funds. GSK's order management system automatically releases the vaccine shipment. Cold chain logistics are activated.",
+      detail:"Order RELEASED | 500,000 doses dispatched",anim:'r-proc',topic:'Automated Order Release'},
+     {q:"The audit trail for public money?",
+      a:"Extremely rigorous. NHS England files with the Department of Health and National Audit Office. HBSC provides the Government Banking Service record. A parliamentary questions briefing is prepared. Every penny has a complete trail.",
+      detail:"NAO audit filed | Parliamentary briefing prepared",anim:'recon',topic:'Public Accountability & NAO Audit'}
+   ]},
+  {id:'pens',label:'💰 Pension Transfer',amt:'£45,000,000',sender:'natwest',receiver:'lloyds',
+   from:'BT Pension Scheme (NotWest)',to:'Aviva Life (Tooyed)',purpose:'Bulk annuity buy-in, tranche 3 of 5',
+   steps:[
+     {q:"Can you walk us through a forty-five million pound pension payment?",
+      a:"The BT Pension Scheme trustees are transferring pensioner liabilities to Aviva through a bulk annuity buy-in. This is tranche three of five, worth forty-five million, part of a two hundred and twenty-five million pound deal.",
+      detail:"Tranche 3/5 | Total deal: £225M",anim:'hl-s',topic:'Bulk Annuity Buy-In Structure'},
+     {q:"What regulatory checks apply to pension payments?",
+      a:"NotWest verifies against the Pensions Regulator notification. They confirm the buy-in contract is registered, verify Aviva is FCA-regulated, and run AML and sanctions checks. The payment is flagged as a regulated pension scheme transaction.",
+      detail:"TPR notification confirmed | FCA counterparty verified",anim:'s-proc',topic:'Pensions Regulator Compliance'},
+     {q:"Is the SWIFT message structured differently for pensions?",
+      a:"The MT103 carries structured remittance referencing the bulk annuity contract and tranche number. Aviva needs to know exactly which tranche is funded to update their actuarial models.",
+      detail:"Structured remittance: BT-PS-2026-BIA-003-T3",anim:'s-hub',topic:'Pension-Specific Remittance Data'},
+     {q:"Any special treatment at the Bank of England?",
+      a:"Standard process, but throughput monitoring matters. The target is to submit fifty percent of daily CHAPS value by noon. Forty-five million is within NotWest's normal pattern, so it processes immediately.",
+      detail:"Throughput: within guidelines | Queue: immediate",anim:'hub-proc',topic:'CHAPS Throughput Guidelines'},
+     {q:"The settlement transfers actual liability funding?",
+      a:"Exactly. RTGS debits NotWest by forty-five million and credits Tooyed. Irrevocable. Two thousand eight hundred and forty-seven pensioners' payment obligations are transferring from BT to Aviva.",
+      detail:"2,847 pensioner lives in tranche | IRREVOCABLE",anim:'settle',topic:'Pension Liability Transfer Settlement'},
+     {q:"How does Tooyed route this to Aviva?",
+      a:"Tooyed receives the MT910 and their insurance banking team matches it to Aviva's expected tranche receipt. The payment is allocated as an insurance premium for the bulk annuity policy.",
+      detail:"Contract ref matched | Premium allocation: tranche 3",anim:'hub-r',topic:'Insurance Premium Allocation'},
+     {q:"What changes at Aviva?",
+      a:"Tooyed credits the premium to Aviva's collection account. Aviva's actuarial systems update the buy-in policy. Records for two thousand eight hundred and forty-seven pensioners transfer. Aviva now pays those pensions, not BT.",
+      detail:"2,847 lives transferred | Aviva assumes liability",anim:'r-proc',topic:'Actuarial Policy & Liability Assumption'},
+     {q:"The regulatory close-out?",
+      a:"Extensive. Pensions Regulator records the tranche completion. Aviva updates Solvency II capital requirements. BT Pension actuaries recalculate funding, now at ninety-four point two percent. Next tranche is scheduled for June.",
+      detail:"TPR confirmed | Solvency II updated | Funding: 94.2%",anim:'recon',topic:'Solvency II & Funding Recalculation'}
+   ]}
+];
+
+// === STATE ===
+var txI=0,stI=-1,bkE={},bkP={},hP={x:0,y:0},fds=[],trs=[],topicN=0,typTm=null,stepBusy=false;
+
+// === INIT ===
+window.addEventListener('load',function(){buildMap();startCD()});
+window.addEventListener('resize',buildMap);
+
+function buildMap(){
+  var m=document.getElementById('map'),sv=document.getElementById('svg');
+  var w=m.offsetWidth,h=m.offsetHeight,cx=w/2,cy=h/2;
+  hP={x:cx,y:cy};var r=Math.min(w,h)*.37;
+  sv.innerHTML='';var old=m.querySelectorAll('.bk');for(var o=0;o<old.length;o++)old[o].remove();
+  for(var i=0;i<BANKS.length;i++){
+    var b=BANKS[i],a=(b.angle-90)*Math.PI/180,x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);
+    bkP[b.id]={x:x,y:y};
+    var ln=document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',cx);ln.setAttribute('y1',cy);ln.setAttribute('x2',x);ln.setAttribute('y2',y);
+    ln.setAttribute('class','sp');ln.id='sp_'+b.id;sv.appendChild(ln);
+    var nd=document.createElement('div');nd.className='bk';nd.id='bk_'+b.id;
+    nd.style.left=(x-37)+'px';nd.style.top=(y-37)+'px';
+    nd.innerHTML='<div class="bk-i">'+b.icon+'</div><div class="bk-n">'+b.name+'</div>';
+    m.appendChild(nd);bkE[b.id]=nd;
+  }
+}
+
+// === COUNTDOWN ===
+function startCD(){
+  var c=5,w=['five','four','three','two','one'];
+  var iv=setInterval(function(){
+    c--;
+    document.getElementById('cdn').textContent=c;
+    document.getElementById('cdw').textContent=w[5-c-1]||'';
+    if(c<=0){
+      clearInterval(iv);
+      var ov=document.getElementById('ov');
+      ov.classList.add('hide');
+      setTimeout(function(){ov.style.display='none';beginDemo()},800);
+    }
+  },1000);
+}
+
+// === DEMO ENGINE ===
+function beginDemo(){txI=0;runTxn()}
+
+function runTxn(){
+  if(txI>=TXN.length)txI=0;
+  var t=TXN[txI];stI=-1;
+  document.getElementById('ban').innerHTML='<i><b>Transaction:</b> '+t.label+'</i><i><b>Amount:</b> '+t.amt+'</i><i><b>From:</b> '+t.from+'</i><i><b>To:</b> '+t.to+'</i>';
+  var dh='';for(var i=0;i<t.steps.length;i++)dh+='<div class="sd" id="sd'+i+'"></div>';
+  document.getElementById('sdots').innerHTML=dh;
+  document.getElementById('pfill').style.width='0%';
+  clearFD();resetBK();
+  bkE[t.sender].classList.add('sn');bkE[t.receiver].classList.add('rv');
+  document.getElementById('sp_'+t.sender).classList.add('sn');
+  document.getElementById('sp_'+t.receiver).classList.add('rv');
+  var cl=document.getElementById('clog');
+  var th=document.createElement('div');th.className='ctxh';th.textContent='── '+t.label+': '+t.purpose+' ──';
+  cl.appendChild(th);cl.scrollTop=cl.scrollHeight;
+  runStep();
+}
+
+function runStep(){
+  if(stepBusy)return;
+  var t=TXN[txI];stI++;
+  if(stI>=t.steps.length){setTimeout(function(){txI++;runTxn()},3000);return}
+  stepBusy=true;
+  var s=t.steps[stI],pct=((stI+1)/t.steps.length)*100;
+  document.getElementById('pfill').style.width=pct+'%';
+  for(var i=0;i<t.steps.length;i++){var d=document.getElementById('sd'+i);if(d)d.className='sd'+(i<stI?' dn':i===stI?' on':'')}
+  clearFD();playAnim(s.anim,t);
+  topicN++;
+  var tl=document.getElementById('tlist');
+  var ti=document.createElement('div');ti.className='titem';
+  ti.innerHTML='<div class="tnum">'+topicN+'</div><div class="ttxt">'+s.topic+'</div>';
+  tl.appendChild(ti);tl.scrollTop=tl.scrollHeight;
+  addChatQ(s.q);
+  // Speak question, then after it ends (or timeout), type answer
+  var qDone=false;
+  function afterQ(){
+    if(qDone)return;qDone=true;
+    typeChatA(s.a,s.detail,function(){
+      stepBusy=false;
+      setTimeout(runStep,1800);
+    });
+    trySpeak(s.a,'en-IN',0.88,0.85);
+  }
+  // Timeout fallback: estimate ~80ms per word for speech
+  var qWords=s.q.split(' ').length;
+  var qTimeout=Math.max(qWords*80+1500,3000);
+  setTimeout(afterQ,qTimeout);
+  trySpeak(s.q,'en-GB',0.95,1.15,afterQ);
+}
+
+// === SPEECH WITH FALLBACK ===
+function trySpeak(text,lang,rate,pitch,onEnd){
+  if(!window.speechSynthesis||!userClicked){if(onEnd)onEnd();return}
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.rate=rate;u.pitch=pitch;u.volume=1;u.lang=lang;
+    var voices=speechSynthesis.getVoices();
+    if(lang==='en-GB'){
+      var v=findVoice(voices,'en-GB','female')||findVoice(voices,'en-GB',null)||findVoice(voices,'en',null);
+      if(v)u.voice=v;
+    }else{
+      var v=findVoice(voices,'en-IN',null)||findVoice(voices,'en','male')||findVoice(voices,'en',null);
+      if(v)u.voice=v;
+    }
+    if(onEnd){u.onend=function(){onEnd()};u.onerror=function(){onEnd()}}
+    speechSynthesis.speak(u);
+  }catch(e){if(onEnd)onEnd()}
+}
+
+function findVoice(voices,lang,gender){
+  for(var i=0;i<voices.length;i++){
+    var v=voices[i],nm=v.name.toLowerCase();
+    if(v.lang===lang||v.lang.replace('_','-')===lang){
+      if(!gender)return v;
+      if(gender==='female'&&(nm.indexOf('female')>=0||nm.indexOf('woman')>=0||nm.indexOf('fiona')>=0||nm.indexOf('kate')>=0||nm.indexOf('martha')>=0||nm.indexOf('libby')>=0))return v;
+      if(gender==='male'&&(nm.indexOf('male')>=0||nm.indexOf('man')>=0||nm.indexOf('daniel')>=0||nm.indexOf('george')>=0||nm.indexOf('rishi')>=0))return v;
+    }
+  }
+  // Fallback: match lang prefix
+  for(var i=0;i<voices.length;i++){
+    if(voices[i].lang.indexOf(lang.split('-')[0])===0)return voices[i];
+  }
+  return null;
+}
+
+// === CHAT LOG ===
+function addChatQ(text){
+  var cl=document.getElementById('clog');
+  var d=document.createElement('div');d.className='cmsg';
+  d.innerHTML='<div class="cq"><div class="ch"><div class="cav f">👩</div><div class="cn f">Question</div></div><div class="ct qi">'+text+'</div></div>';
+  cl.appendChild(d);cl.scrollTop=cl.scrollHeight;
+}
+
+function typeChatA(text,detail,onDone){
+  var cl=document.getElementById('clog');
+  var d=document.createElement('div');d.className='cmsg';
+  var uid='at_'+Date.now();
+  d.innerHTML='<div class="ca"><div class="ch"><div class="cav m">👨</div><div class="cn m">Answer</div></div><div class="ct" id="'+uid+'"><span class="cur"></span></div></div>';
+  cl.appendChild(d);cl.scrollTop=cl.scrollHeight;
+  var el=document.getElementById(uid);
+  var i=0;if(typTm)clearInterval(typTm);
+  typTm=setInterval(function(){
+    if(i<text.length){
+      el.innerHTML=text.substring(0,i+1)+'<span class="cur"></span>';
+      i++;cl.scrollTop=cl.scrollHeight;
+    }else{
+      clearInterval(typTm);typTm=null;
+      el.innerHTML=text;
+      if(detail){
+        var dd=document.createElement('div');dd.className='cdet';dd.textContent=detail;
+        d.querySelector('.ca').appendChild(dd);
+      }
+      cl.scrollTop=cl.scrollHeight;
+      if(onDone)onDone();
+    }
+  },18);
+}
+
+// === ANIMATIONS ===
+function playAnim(type,txn){
+  var s=bkP[txn.sender],r=bkP[txn.receiver];
+  switch(type){
+    case'hl-s':pulse(txn.sender);fTxt(s.x,s.y-48,'💷 '+txn.amt,'#00ff88');bCur(s.x,s.y);break;
+    case's-proc':pulse(txn.sender);fTxt(s.x,s.y-48,'🔍 Screening','#ffa500');orbI(s.x,s.y,['🛡️','📋','✅']);break;
+    case's-hub':flowSp(s,hP,'💷',1600,'#00ff88');setTimeout(function(){flowSp(s,hP,'📨',1800,'#00c8ff')},350);fTxt((s.x+hP.x)/2,(s.y+hP.y)/2-22,'MT103 →','#00c8ff');break;
+    case'hub-proc':pulseH();fTxt(hP.x,hP.y-60,'⚙️ Validating','#ffd700');orbI(hP.x,hP.y,['🔐','💰','✓']);break;
+    case'settle':flashS();flowSp(hP,s,'➖',1100,'#ff6b6b');setTimeout(function(){flowSp(hP,r,'➕',1100,'#00ff88')},250);fTxt(hP.x,hP.y-60,'⚡ SETTLED','#ffd700');fTxt(s.x,s.y-48,'-'+txn.amt,'#ff6b6b');setTimeout(function(){fTxt(r.x,r.y-48,'+'+txn.amt,'#00ff88')},400);break;
+    case'hub-r':flowSp(hP,r,'📨',1600,'#ff6b9d');setTimeout(function(){flowSp(hP,r,'💷',1800,'#ffd700')},350);fTxt((hP.x+r.x)/2,(hP.y+r.y)/2-22,'← MT910','#ff6b9d');break;
+    case'r-proc':pulse(txn.receiver);fTxt(r.x,r.y-48,'✅ Credited','#00ff88');bCur(r.x,r.y);break;
+    case'recon':flowSp(s,hP,'📊',1800,'#6078ff');flowSp(r,hP,'📊',1800,'#6078ff');setTimeout(function(){fTxt(hP.x,hP.y-60,'📋 Reconciled','#a855f7');pulseH()},2000);break;
+  }
+}
+
+function flowSp(f,t,ic,dur,col){
+  var m=document.getElementById('map'),d=document.createElement('div');
+  d.className='fd';d.textContent=ic;d.style.left=f.x+'px';d.style.top=f.y+'px';
+  m.appendChild(d);fds.push(d);
+  var t0=performance.now();
+  var ti=setInterval(function(){spTr(parseFloat(d.style.left),parseFloat(d.style.top),col)},45);
+  function fr(now){
+    var p=Math.min((now-t0)/dur,1),e=p<.5?4*p*p*p:(p-1)*(2*p-2)*(2*p-2)+1;
+    d.style.left=(f.x+(t.x-f.x)*e)+'px';d.style.top=(f.y+(t.y-f.y)*e)+'px';
+    if(p<1)requestAnimationFrame(fr);
+    else{clearInterval(ti);setTimeout(function(){if(d.parentNode)d.remove()},150)}
+  }
+  requestAnimationFrame(fr);
+}
+function spTr(x,y,c){var m=document.getElementById('map'),t=document.createElement('div');t.className='tr';t.style.left=x+'px';t.style.top=y+'px';t.style.background='radial-gradient(circle,'+c+',transparent)';m.appendChild(t);trs.push(t);setTimeout(function(){t.style.opacity='0'},60);setTimeout(function(){if(t.parentNode)t.remove()},400)}
+function bCur(x,y){var m=document.getElementById('map');var syms=['💷','💷','💰','💷','💰'];for(var i=0;i<syms.length;i++){(function(idx){setTimeout(function(){var e=document.createElement('div');e.className='fd';e.textContent=syms[idx];e.style.fontSize='24px';e.style.left=(x-18+Math.random()*36)+'px';e.style.top=y+'px';e.style.animation='fUp 1.3s ease forwards';m.appendChild(e);fds.push(e);setTimeout(function(){if(e.parentNode)e.remove()},1300)},idx*160)})(i)}
+}
+function fTxt(x,y,t,c){var m=document.getElementById('map'),e=document.createElement('div');e.className='ft';e.textContent=t;e.style.left=x+'px';e.style.top=y+'px';e.style.color=c;m.appendChild(e);fds.push(e);setTimeout(function(){if(e.parentNode)e.remove()},1500)}
+function orbI(cx,cy,icons){var m=document.getElementById('map');for(var i=0;i<icons.length;i++){(function(idx){setTimeout(function(){var e=document.createElement('div');e.className='fd';e.textContent=icons[idx];e.style.fontSize='20px';var a=(idx/icons.length)*Math.PI*2-Math.PI/2;e.style.left=(cx+42*Math.cos(a))+'px';e.style.top=(cy+42*Math.sin(a))+'px';m.appendChild(e);fds.push(e);setTimeout(function(){e.style.opacity='0';e.style.transition='opacity .3s'},1100);setTimeout(function(){if(e.parentNode)e.remove()},1400)},idx*250)})(i)}
+}
+function pulse(id){var n=bkE[id];n.style.animation='nGlow .8s ease 2';setTimeout(function(){n.style.animation=''},1600)}
+function pulseH(){var h=document.getElementById('hub');h.style.animation='hFlash .8s ease 2';setTimeout(function(){h.style.animation=''},1600)}
+function flashS(){var b=document.getElementById('burst');b.classList.add('on');document.getElementById('hub').classList.add('fl');setTimeout(function(){b.classList.remove('on');document.getElementById('hub').classList.remove('fl')},1000)}
+function clearFD(){for(var i=0;i<fds.length;i++)if(fds[i].parentNode)fds[i].remove();fds=[];for(var i=0;i<trs.length;i++)if(trs[i].parentNode)trs[i].remove();trs=[]}
+function resetBK(){for(var k in bkE){bkE[k].classList.remove('sn','rv');bkE[k].style.animation=''}var sps=document.querySelectorAll('.sp');for(var i=0;i<sps.length;i++)sps[i].classList.remove('sn','rv');document.getElementById('hub').classList.remove('fl');document.getElementById('hub').style.animation='';document.getElementById('burst').classList.remove('on')}
+
+// Preload voices
+if(speechSynthesis&&speechSynthesis.onvoiceschanged!==undefined){speechSynthesis.onvoiceschanged=function(){speechSynthesis.getVoices()}}
+try{speechSynthesis.getVoices()}catch(e){}
+</script>
+</body>
+</html>
